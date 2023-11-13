@@ -6,7 +6,7 @@
         <div
           class="a-slider-handle-wrapper"
           ref="handleWrapper"
-          :style="{ left: `${a}%` }"
+          :style="{ left: `${proportion}%` }"
           @pointerdown="onPointerdown"
         >
           <div class="a-slider-handle"></div>
@@ -31,14 +31,20 @@ const props = defineProps({
   step: {
     type: Number,
     default: 1
-  }
+  },
+  onUpdateValue: Function
 })
 
 const handleWrapper = shallowRef(null)
 const handles = shallowRef(null)
-const a = ref(0)
+const stepSize = ref(0)
 
 const stepRatio = computed(() => props.step / props.max)
+const proportion = computed(() => {
+  const progress = ((props.value * stepSize.value) / handles.value?.offsetWidth ?? 0) * 100
+  const proportion = progress < 0 ? 0 : progress > 100 ? 100 : progress
+  return proportion
+})
 
 let pressed = null
 
@@ -65,11 +71,12 @@ const triggerSlider = (event) => {
   const { offsetWidth: handlesWidth } = handles.value
   const rect = handles.value.getBoundingClientRect()
   const positionX = event.clientX - rect.left
-  const stepSize = stepRatio.value * handlesWidth
-  const percent = positionX / stepSize
+  stepSize.value = stepRatio.value * handlesWidth
+  const percent = positionX / stepSize.value
   const stepCount = round(percent)
-  const progress = ((stepCount * stepSize) / handlesWidth) * 100
-  a.value = progress < 0 ? 0 : progress > 100 ? 100 : progress
+  // const progress = ((stepCount * stepSize.value) / handlesWidth) * 100
+  // const proportion = progress < 0 ? 0 : progress > 100 ? 100 : progress
+  props.onUpdateValue?.(stepCount)
 }
 
 onMounted(() => {
@@ -102,6 +109,7 @@ function round(number) {
 }
 
 .a-slider-rail {
+  position: relative;
   background-color: #dbdbdf;
   height: var(--a-rail-height);
   border-radius: calc(var(--a-rail-height) / 2)
@@ -122,6 +130,7 @@ function round(number) {
 .a-slider-handle-wrapper {
   width: var(--a-handle-size);
   height: var(--a-handle-size);
+  position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
   cursor: pointer;
