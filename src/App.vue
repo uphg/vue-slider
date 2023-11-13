@@ -1,20 +1,13 @@
-<script setup>
-import Slider from './components/Slider.vue'
-import Scale from './components/Scale.vue'
-</script>
-
 <template>
-  <div id="app">
-    <!-- <Slider v-model:value="value" :min="1" :max="10"/> -->
-    <Slider/>
-    <Scale/>
+  <div>
+    <Slider v-model:value="a" :min="1" :max="100"/>
+    {{ a }}
   </div>
 </template>
 
-<style scoped>
-#app {
-  width: 500px;
-  display: flex;
-  flex-direction: column;
-}
-</style>
+<script setup lang="ts">
+import { ref } from 'vue';
+import Slider from './components/Slider.vue'
+
+const a = ref(2)
+</script>

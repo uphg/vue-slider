@@ -1,7 +1,7 @@
 <template>
   <div class="a-slider" @click="onClick">
     <div class="a-slider-rail">
-      <div class="a-slider-rail__fill" :style="{ width: `${a}%` }"></div>
+      <div class="a-slider-rail__fill" :style="{ width: `${proportion}%` }"></div>
       <div class="a-slider-handles" ref="handles">
         <div
           class="a-slider-handle-wrapper"
@@ -16,10 +16,11 @@
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, shallowRef, computed, onUnmounted } from 'vue-demi';
+<script setup lang="ts">
+import { ref, onMounted, shallowRef, computed, onUnmounted } from 'vue'
 
 const props = defineProps({
+  value: Number,
   min: {
     type: Number,
     default: 0
@@ -35,24 +36,22 @@ const props = defineProps({
   onUpdateValue: Function
 })
 
-const handleWrapper = shallowRef(null)
-const handles = shallowRef(null)
+const emit = defineEmits(['update:value'])
+
+const handleWrapper = shallowRef<HTMLDivElement | null>(null)
+const handles = shallowRef<HTMLDivElement | null>(null)
 const stepSize = ref(0)
 
 const stepRatio = computed(() => props.step / props.max)
-const proportion = computed(() => {
-  const progress = ((props.value * stepSize.value) / handles.value?.offsetWidth ?? 0) * 100
-  const proportion = progress < 0 ? 0 : progress > 100 ? 100 : progress
-  return proportion
-})
+const proportion = computed(() => ((props.value ?? 0) / props.max) * 100)
 
-let pressed = null
+let pressed = false
 
 const onPointerdown = () => {
   pressed = true
 }
 
-const onPointermove = (event) => {
+const onPointermove = (event: MouseEvent) => {
   event.preventDefault();
   if (!pressed) return
   triggerSlider(event)
@@ -60,23 +59,36 @@ const onPointermove = (event) => {
 
 const onPointerup = () => {
   if (!pressed) return
-  pressed = null
+  pressed = false
 }
 
-const onClick = (event) => {
+const onClick = (event: MouseEvent) => {
   triggerSlider(event)
 }
 
-const triggerSlider = (event) => {
-  const { offsetWidth: handlesWidth } = handles.value
-  const rect = handles.value.getBoundingClientRect()
+const triggerSlider = (event: MouseEvent) => {
+  const { offsetWidth: handlesWidth } = handles.value!
+  const rect = handles.value!.getBoundingClientRect()
   const positionX = event.clientX - rect.left
   stepSize.value = stepRatio.value * handlesWidth
   const percent = positionX / stepSize.value
   const stepCount = round(percent)
-  // const progress = ((stepCount * stepSize.value) / handlesWidth) * 100
-  // const proportion = progress < 0 ? 0 : progress > 100 ? 100 : progress
-  props.onUpdateValue?.(stepCount)
+  updateValue(stepCount)
+}
+
+function updateValue(value: number) {
+  const newValue = value / props.max >= 1
+    ? props.max
+    : (value < 0 ? 0 : value)
+
+  props.onUpdateValue?.(newValue)
+  emit('update:value', newValue)
+}
+
+function round(value: number) {
+  const integer = Math.floor(value);
+  const decimalPart = value - integer;
+  return decimalPart * 10 >= 5 ? integer + props.step : integer
 }
 
 onMounted(() => {
@@ -88,13 +100,6 @@ onUnmounted(() => {
   document.removeEventListener('pointermove', onPointermove)
   document.removeEventListener('pointerup', onPointerup)
 })
-
-
-function round(number) {
-  const integer = Math.floor(number);
-  const decimalPart = number - integer;
-  return decimalPart * 10 >= 5 ? integer + props.step : integer
-}
 </script>
 
 <style scoped>
@@ -137,6 +142,7 @@ function round(number) {
 }
 
 .a-slider-handle {
+  box-sizing: border-box;
   width: 100%;
   height: 100%;
   border: 2px solid #2080f0;
