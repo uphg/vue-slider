@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, shallowRef, computed, onUnmounted } from 'vue'
+import { onMounted, shallowRef, computed, onUnmounted } from 'vue'
 
 const props = defineProps({
   value: Number,
@@ -40,40 +40,39 @@ const emit = defineEmits(['update:value'])
 
 const handleWrapper = shallowRef<HTMLDivElement | null>(null)
 const handles = shallowRef<HTMLDivElement | null>(null)
-const stepSize = ref(0)
 
-const stepRatio = computed(() => props.step / props.max)
 const proportion = computed(() => ((props.value ?? 0) / props.max) * 100)
 
 let pressed = false
 
-const onPointerdown = () => {
+function onPointerdown() {
   pressed = true
 }
 
-const onPointermove = (event: MouseEvent) => {
+function onPointermove(event: MouseEvent) {
   event.preventDefault();
   if (!pressed) return
   triggerSlider(event)
 }
 
-const onPointerup = () => {
+function onPointerup() {
   if (!pressed) return
   pressed = false
 }
 
-const onClick = (event: MouseEvent) => {
+function onClick(event: MouseEvent) {
   triggerSlider(event)
 }
 
-const triggerSlider = (event: MouseEvent) => {
+function triggerSlider(event: MouseEvent) {
   const { offsetWidth: handlesWidth } = handles.value!
   const rect = handles.value!.getBoundingClientRect()
   const positionX = event.clientX - rect.left
-  stepSize.value = stepRatio.value * handlesWidth
-  const percent = positionX / stepSize.value
+  const stepRatio = props.step / props.max
+  const stepSize = stepRatio * handlesWidth
+  const percent = positionX / stepSize
   const stepCount = round(percent)
-  updateValue(stepCount)
+  updateValue(stepCount * props.step)
 }
 
 function updateValue(value: number) {
@@ -88,7 +87,7 @@ function updateValue(value: number) {
 function round(value: number) {
   const integer = Math.floor(value);
   const decimalPart = value - integer;
-  return decimalPart * 10 >= 5 ? integer + props.step : integer
+  return decimalPart * 10 >= 5 ? integer + 1 : integer
 }
 
 onMounted(() => {

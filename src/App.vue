@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Slider v-model:value="a" :min="1" :max="100"/>
+    <Slider v-model:value="a" :step="5" :min="1" :max="100"/>
     {{ a }}
   </div>
 </template>
